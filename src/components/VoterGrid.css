@@ -44,6 +44,8 @@
   border-color: transparent;
 }
 
+/* keep LED readable without heavy glow */
+
 .voter-name {
   font-size: clamp(0.82rem, 1.4vw, 1.05rem);
   font-weight: 500;

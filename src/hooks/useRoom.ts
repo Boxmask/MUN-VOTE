@@ -10,7 +10,7 @@ export function useRoom(seed: string | undefined) {
   useEffect(() => {
     if (!seed) {
       setLoading(false)
-      setError('Seed가 없습니다.')
+      setError('Missing seed.')
       return
     }
 
@@ -22,10 +22,10 @@ export function useRoom(seed: string | undefined) {
       unsub = subscribeRoom(seed, (data) => {
         setRoom(data)
         setLoading(false)
-        if (!data) setError('방을 찾을 수 없습니다. Seed number를 확인해 주세요.')
+        if (!data) setError('Room not found. Check the seed number.')
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : '연결 실패')
+      setError(e instanceof Error ? e.message : 'Connection failed')
       setLoading(false)
     }
 

@@ -1,0 +1,59 @@
+.country-suggest {
+  position: relative;
+}
+
+.country-suggest input {
+  width: 100%;
+  font: inherit;
+  padding: 0.85rem 0.9rem;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.country-suggest input:focus {
+  outline: 1px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 1px;
+}
+
+.country-suggest-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.country-suggest-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+}
+
+.country-suggest-list button.is-active,
+.country-suggest-list button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.country-suggest-list small {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}

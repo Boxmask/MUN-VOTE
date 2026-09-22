@@ -15,7 +15,7 @@ export function ResultsPanel({ room }: Props) {
 
   const gradient =
     t.cast === 0
-      ? 'conic-gradient(#334155 0deg 360deg)'
+      ? 'conic-gradient(#333 0deg 360deg)'
       : `conic-gradient(
           #22c55e 0deg ${yesDeg}deg,
           #ef4444 ${yesDeg}deg ${yesDeg + noDeg}deg,
@@ -30,15 +30,15 @@ export function ResultsPanel({ room }: Props) {
       <div className="results-legend">
         <div className="results-legend-item">
           <span className="swatch swatch--yes" />
-          <span>찬성: {t.yesPct.toFixed(2)}%</span>
+          <span>Yes: {t.yesPct.toFixed(2)}%</span>
         </div>
         <div className="results-legend-item">
           <span className="swatch swatch--no" />
-          <span>반대: {t.noPct.toFixed(2)}%</span>
+          <span>No: {t.noPct.toFixed(2)}%</span>
         </div>
         <div className="results-legend-item">
           <span className="swatch swatch--abstain" />
-          <span>기권: {t.abstainPct.toFixed(2)}%</span>
+          <span>Abstain: {t.abstainPct.toFixed(2)}%</span>
         </div>
       </div>
     </div>

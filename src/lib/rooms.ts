@@ -10,6 +10,7 @@ import {
 } from 'firebase/database'
 import { getDb } from './firebase'
 import type { Room, RoomStatus, VoteChoice, Voter } from '../types'
+import { MAX_VOTER_ID_LENGTH } from '../types'
 
 function roomRef(seed: string) {
   return ref(getDb(), `rooms/${seed}`)
@@ -50,7 +51,7 @@ export async function createRoom(): Promise<{ seed: string; hostKey: string }> {
     localStorage.setItem(hostKeyStorageKey(seed), hostKey)
     return { seed, hostKey }
   }
-  throw new Error('시드 생성에 실패했습니다. 다시 시도해 주세요.')
+  throw new Error('Could not create a seed. Please try again.')
 }
 
 export function subscribeRoom(
@@ -64,11 +65,13 @@ export function subscribeRoom(
 
 export async function joinRoom(seed: string, voterId: string): Promise<void> {
   const id = voterId.trim()
-  if (!id) throw new Error('ID를 입력해 주세요.')
-  if (id.length > 24) throw new Error('ID는 24자 이하여야 합니다.')
+  if (!id) throw new Error('Enter a country / delegate ID.')
+  if (id.length > MAX_VOTER_ID_LENGTH) {
+    throw new Error(`ID must be ${MAX_VOTER_ID_LENGTH} characters or fewer.`)
+  }
 
   const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('존재하지 않는 Seed number입니다.')
+  if (!snap.exists()) throw new Error('That seed number does not exist.')
 
   const result = await runTransaction(ref(getDb(), `rooms/${seed}/voters/${id}`), (current) => {
     if (current !== null) return undefined
@@ -77,7 +80,7 @@ export async function joinRoom(seed: string, voterId: string): Promise<void> {
   })
 
   if (!result.committed) {
-    throw new Error('이미 사용 중인 ID입니다. 다른 이름을 입력해 주세요.')
+    throw new Error('That ID is already taken. Choose another.')
   }
 
   localStorage.setItem(voterIdStorageKey(seed), id)
@@ -85,12 +88,12 @@ export async function joinRoom(seed: string, voterId: string): Promise<void> {
 
 export async function startVote(seed: string, hostKey: string, topic: string): Promise<void> {
   const trimmed = topic.trim()
-  if (!trimmed) throw new Error('Topic을 입력해 주세요.')
+  if (!trimmed) throw new Error('Enter a topic.')
 
   const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('방을 찾을 수 없습니다.')
+  if (!snap.exists()) throw new Error('Room not found.')
   const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('호스트 권한이 없습니다.')
+  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
 
   const clearedVoters: Record<string, Voter> = {}
   for (const [id, voter] of Object.entries(room.voters ?? {})) {
@@ -116,7 +119,7 @@ export async function castVote(
   })
 
   if (!result.committed) {
-    throw new Error('이미 투표했습니다. 번복할 수 없습니다.')
+    throw new Error('You already voted. Votes cannot be changed.')
   }
 
   await maybeFinishWhenAllVoted(seed)
@@ -137,17 +140,17 @@ async function maybeFinishWhenAllVoted(seed: string): Promise<void> {
 
 export async function endVote(seed: string, hostKey: string): Promise<void> {
   const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('방을 찾을 수 없습니다.')
+  if (!snap.exists()) throw new Error('Room not found.')
   const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('호스트 권한이 없습니다.')
+  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
   await update(roomRef(seed), { status: 'results' satisfies RoomStatus })
 }
 
 export async function resetToLobby(seed: string, hostKey: string): Promise<void> {
   const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('방을 찾을 수 없습니다.')
+  if (!snap.exists()) throw new Error('Room not found.')
   const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('호스트 권한이 없습니다.')
+  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
 
   const clearedVoters: Record<string, Voter> = {}
   for (const [id, voter] of Object.entries(room.voters ?? {})) {
@@ -163,9 +166,9 @@ export async function resetToLobby(seed: string, hostKey: string): Promise<void>
 
 export async function removeVoter(seed: string, hostKey: string, voterId: string): Promise<void> {
   const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('방을 찾을 수 없습니다.')
+  if (!snap.exists()) throw new Error('Room not found.')
   const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('호스트 권한이 없습니다.')
+  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
   await remove(ref(getDb(), `rooms/${seed}/voters/${voterId}`))
 }
 

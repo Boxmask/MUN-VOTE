@@ -20,7 +20,7 @@ export function Home() {
       const { seed } = await createRoom()
       navigate(`/host/${seed}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : '방 생성 실패')
+      setError(e instanceof Error ? e.message : 'Could not open table')
     } finally {
       setBusy(false)
     }
@@ -30,7 +30,7 @@ export function Home() {
     e.preventDefault()
     const seed = joinSeed.replace(/\D/g, '').slice(0, 6)
     if (seed.length !== 6) {
-      setError('6자리 Seed number를 입력해 주세요.')
+      setError('Enter a 6-digit seed number.')
       return
     }
     navigate(`/join/${seed}`)
@@ -38,18 +38,17 @@ export function Home() {
 
   return (
     <div className="home">
-      <div className="home-atmosphere" aria-hidden />
       <main className="home-main">
         <p className="home-brand">MUN Voting</p>
-        <h1 className="home-headline">실시간 위원회 전자투표</h1>
+        <h1 className="home-headline">Committee electronic voting</h1>
         <p className="home-sub">
-          호스트가 테이블을 열면 Seed가 발급됩니다. 대표단은 Seed로 입장해 찬성·반대·기권을
-          한 번만 행사합니다.
+          The host opens a voting table and gets a seed. Delegates join with that seed and cast
+          Yes, No, or Abstain once.
         </p>
 
         <div className="home-actions">
           <button type="button" className="btn btn--primary" disabled={busy} onClick={onCreate}>
-            {busy ? '테이블 여는 중…' : 'Voting Table 열기'}
+            {busy ? 'Opening…' : 'Open Voting Table'}
           </button>
 
           <form className="home-join" onSubmit={onJoin}>
@@ -74,12 +73,12 @@ export function Home() {
         {error && <p className="home-error">{error}</p>}
 
         <div className="home-tips">
-          <h2>화면 공유할 때 (Mac / Zoom / AirPlay)</h2>
+          <h2>Screen sharing (Mac / Zoom / AirPlay)</h2>
           <p>
-            호스트 조작 화면과 공유용 전광판을 분리했습니다. Table을 연 뒤{' '}
-            <strong>전광판 열기</strong>로 새 창을 띄우고, 그 창만 공유하세요.
+            Host controls and the shared board are separate. After opening a table, use{' '}
+            <strong>Open Display Board</strong> and share <em>only that window</em>.
           </p>
-          <Link to="/guide">공유 방법 자세히 보기</Link>
+          <Link to="/guide">How to share the board only</Link>
         </div>
       </main>
     </div>

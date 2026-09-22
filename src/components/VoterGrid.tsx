@@ -21,7 +21,7 @@ export function VoterGrid({ room, highlightId, revealVotes = true }: Props) {
   if (ids.length === 0) {
     return (
       <div className="voter-grid voter-grid--empty">
-        <p>아직 입장한 대표가 없습니다.</p>
+        <p>No delegates have joined yet.</p>
       </div>
     )
   }
@@ -43,7 +43,7 @@ export function VoterGrid({ room, highlightId, revealVotes = true }: Props) {
           >
             <span
               className={`voter-dot ${active ? 'voter-dot--on' : ''}`}
-              style={active && color ? { background: color, boxShadow: `0 0 10px ${color}` } : undefined}
+              style={active && color ? { background: color } : undefined}
               aria-hidden
             />
             <span className="voter-name">{id}</span>

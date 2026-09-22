@@ -1,12 +1,13 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { BoardShell } from '../components/BoardShell'
+import { CountrySuggest } from '../components/CountrySuggest'
 import { SetupGate } from '../components/SetupGate'
 import { useRoom } from '../hooks/useRoom'
 import { isFirebaseConfigured } from '../lib/firebase'
 import { castVote, joinRoom, voterIdStorageKey } from '../lib/rooms'
 import type { VoteChoice } from '../types'
-import { VOTE_LABEL } from '../types'
+import { MAX_VOTER_ID_LENGTH, VOTE_LABEL } from '../types'
 import './Join.css'
 
 export function Join() {
@@ -40,14 +41,14 @@ export function Join() {
   if (!isFirebaseConfigured()) return <SetupGate />
 
   if (loading) {
-    return <div className="join-status">테이블 찾는 중…</div>
+    return <div className="join-status">Finding table…</div>
   }
 
   if (error || !room) {
     return (
       <div className="join-status">
-        <p>{error ?? '방을 찾을 수 없습니다.'}</p>
-        <Link to="/">홈으로</Link>
+        <p>{error ?? 'Room not found.'}</p>
+        <Link to="/">Home</Link>
       </div>
     )
   }
@@ -58,10 +59,9 @@ export function Join() {
     setMessage(null)
     try {
       await joinRoom(seed, idInput)
-      const id = idInput.trim()
-      setMyId(id)
+      setMyId(idInput.trim())
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : '입장 실패')
+      setMessage(err instanceof Error ? err.message : 'Could not join')
     } finally {
       setBusy(false)
     }
@@ -74,7 +74,7 @@ export function Join() {
     try {
       await castVote(seed, myId, choice)
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : '투표 실패')
+      setMessage(err instanceof Error ? err.message : 'Vote failed')
     } finally {
       setBusy(false)
     }
@@ -89,10 +89,10 @@ export function Join() {
           <strong>{myId}</strong>
           {myVote ? (
             <span>
-              투표 완료 · <em data-vote={myVote}>{VOTE_LABEL[myVote]}</em> (번복 불가)
+              Voted · <em data-vote={myVote}>{VOTE_LABEL[myVote]}</em> (locked)
             </span>
           ) : (
-            <span>하나를 선택하세요. 제출 후 변경할 수 없습니다.</span>
+            <span>Choose one. You cannot change your vote after submitting.</span>
           )}
         </div>
         {!myVote && (
@@ -103,7 +103,7 @@ export function Join() {
               disabled={busy}
               onClick={() => void onVote('yes')}
             >
-              찬성
+              Yes
             </button>
             <button
               type="button"
@@ -111,7 +111,7 @@ export function Join() {
               disabled={busy}
               onClick={() => void onVote('no')}
             >
-              반대
+              No
             </button>
             <button
               type="button"
@@ -119,7 +119,7 @@ export function Join() {
               disabled={busy}
               onClick={() => void onVote('abstain')}
             >
-              기권
+              Abstain
             </button>
           </div>
         )}
@@ -129,8 +129,8 @@ export function Join() {
       <div className="vote-bar vote-bar--idle">
         <strong>{myId}</strong>
         <span>
-          {room.status === 'lobby' && '호스트가 투표를 시작할 때까지 대기하세요.'}
-          {room.status === 'results' && '결과가 집계되었습니다. 다음 Topic을 기다려 주세요.'}
+          {room.status === 'lobby' && 'Waiting for the host to start the vote.'}
+          {room.status === 'results' && 'Results are in. Wait for the next topic.'}
         </span>
         {message && <p className="join-message">{message}</p>}
       </div>
@@ -141,24 +141,27 @@ export function Join() {
       <div className="join-gate">
         <div className="join-card">
           <p className="join-seed-label">Seed {seed}</p>
-          <h1>대표단 입장</h1>
-          <p className="join-lead">위원회에서 사용할 ID(국가명·대표명)를 입력하세요. 중복은 불가합니다.</p>
+          <h1>Join as delegate</h1>
+          <p className="join-lead">
+            Type a country name — suggestions appear as you type. Pick one, or enter a custom ID.
+            Duplicates are not allowed.
+          </p>
           <form onSubmit={onJoin}>
-            <label htmlFor="voter-id">내 ID</label>
-            <input
+            <label htmlFor="voter-id">Country / ID</label>
+            <CountrySuggest
               id="voter-id"
               value={idInput}
-              onChange={(e) => setIdInput(e.target.value)}
-              maxLength={24}
-              placeholder="예: Republic of Korea"
+              onChange={setIdInput}
+              maxLength={MAX_VOTER_ID_LENGTH}
+              placeholder="e.g. Korea"
               autoFocus
             />
             <button type="submit" className="btn btn--primary" disabled={busy || !idInput.trim()}>
-              {busy ? '입장 중…' : '입장'}
+              {busy ? 'Joining…' : 'Enter'}
             </button>
           </form>
           {message && <p className="join-message">{message}</p>}
-          <Link to="/">다른 Seed로</Link>
+          <Link to="/">Different seed</Link>
         </div>
       </div>
     )

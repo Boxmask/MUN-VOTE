@@ -12,6 +12,7 @@ import {
   startVote,
   tallyVotes,
 } from '../lib/rooms'
+import { VOTE_LABEL } from '../types'
 import './Host.css'
 
 export function Host() {
@@ -29,14 +30,14 @@ export function Host() {
   if (!isFirebaseConfigured()) return <SetupGate />
 
   if (loading) {
-    return <div className="page-status">테이블 불러오는 중…</div>
+    return <div className="page-status">Loading table…</div>
   }
 
   if (error || !room) {
     return (
       <div className="page-status page-status--error">
-        <p>{error ?? '방을 찾을 수 없습니다.'}</p>
-        <Link to="/">홈으로</Link>
+        <p>{error ?? 'Room not found.'}</p>
+        <Link to="/">Home</Link>
       </div>
     )
   }
@@ -44,13 +45,11 @@ export function Host() {
   if (!hostKey || hostKey !== room.hostKey) {
     return (
       <div className="page-status page-status--error">
-        <p>
-          이 브라우저에는 호스트 권한이 없습니다. Table을 연 기기에서만 조작할 수 있습니다.
-        </p>
+        <p>This browser is not the host. Open the table from the device that created it.</p>
         <p className="muted">
-          전광판만 보려면 <Link to={`/display/${seed}`}>전광판 열기</Link>
+          Display only: <Link to={`/display/${seed}`}>Open board</Link>
         </p>
-        <Link to="/">홈으로</Link>
+        <Link to="/">Home</Link>
       </div>
     )
   }
@@ -65,7 +64,7 @@ export function Host() {
     try {
       await action()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : '요청 실패')
+      setMessage(e instanceof Error ? e.message : 'Request failed')
     } finally {
       setBusy(false)
     }
@@ -83,14 +82,14 @@ export function Host() {
   async function copyDisplayLink() {
     try {
       await navigator.clipboard.writeText(displayUrl)
-      setMessage('전광판 링크를 복사했습니다.')
+      setMessage('Display link copied.')
     } catch {
       setMessage(displayUrl)
     }
   }
 
   const voterIds = Object.keys(room.voters ?? {}).sort((a, b) =>
-    a.localeCompare(b, 'ko', { sensitivity: 'base' }),
+    a.localeCompare(b, 'en', { sensitivity: 'base' }),
   )
 
   return (
@@ -98,30 +97,31 @@ export function Host() {
       <aside className="host-panel">
         <div className="host-panel-brand">
           <Link to="/">MUN Voting</Link>
-          <span>호스트 콘솔</span>
+          <span>Host</span>
         </div>
 
         <div className="host-seed-block">
           <p className="label">Seed number</p>
           <p className="host-seed">{seed}</p>
-          <p className="hint">대표단에게 이 번호를 알려 주세요.</p>
+          <p className="hint">Share this number with delegates.</p>
         </div>
 
         <div className="host-share-card">
-          <h2>화면 공유용 전광판</h2>
+          <h2>Display board (for screen share)</h2>
           <p>
-            Zoom / FaceTime / AirPlay에서는 <strong>이 조작 화면이 아니라 전광판 창만</strong> 공유하세요.
+            In Zoom / FaceTime / AirPlay, share <strong>the display window only</strong> — not this
+            control panel.
           </p>
           <div className="host-share-actions">
             <button type="button" className="btn btn--primary" onClick={openDisplay}>
-              전광판 열기
+              Open Display Board
             </button>
             <button type="button" className="btn btn--ghost" onClick={() => void copyDisplayLink()}>
-              링크 복사
+              Copy link
             </button>
           </div>
           <Link className="host-guide-link" to="/guide">
-            Mac에서 창만 공유하는 방법
+            How to share one window on Mac
           </Link>
         </div>
 
@@ -131,13 +131,13 @@ export function Host() {
             <textarea
               id="topic"
               rows={3}
-              placeholder="예: 결의안 초안 A에 대한 투표"
+              placeholder="e.g. Draft Resolution A"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               maxLength={120}
             />
             <button type="submit" className="btn btn--primary" disabled={busy || !topic.trim()}>
-              Vote 시작
+              Start Vote
             </button>
           </form>
         )}
@@ -146,8 +146,8 @@ export function Host() {
           <div className="host-form">
             <p className="live-topic">{room.topic}</p>
             <p className="hint">
-              투표 현황 {t.cast}/{t.total}
-              {t.pending > 0 ? ` · 미투표 ${t.pending}` : ''}
+              Ballots {t.cast}/{t.total}
+              {t.pending > 0 ? ` · pending ${t.pending}` : ''}
             </p>
             <button
               type="button"
@@ -163,7 +163,7 @@ export function Host() {
         {room.status === 'results' && (
           <div className="host-form">
             <p className="live-topic">{room.topic}</p>
-            <p className="hint">결과 표시 중 · 다음 Topic으로 넘어가려면 아래를 누르세요.</p>
+            <p className="hint">Showing results. Continue when ready for the next topic.</p>
             <button
               type="button"
               className="btn btn--primary"
@@ -175,7 +175,7 @@ export function Host() {
                 })
               }
             >
-              새 Topic으로
+              New Topic
             </button>
           </div>
         )}
@@ -184,18 +184,18 @@ export function Host() {
 
         <div className="host-roster">
           <div className="host-roster-head">
-            <h2>참석 명단</h2>
-            <span>{voterIds.length}명</span>
+            <h2>Roster</h2>
+            <span>{voterIds.length}</span>
           </div>
           <ul>
-            {voterIds.length === 0 && <li className="empty">아직 입장한 대표가 없습니다.</li>}
+            {voterIds.length === 0 && <li className="empty">No delegates yet.</li>}
             {voterIds.map((id) => {
               const vote = room.voters[id]?.vote
               return (
                 <li key={id}>
                   <span className="roster-id">{id}</span>
                   <span className={`roster-vote roster-vote--${vote ?? 'none'}`}>
-                    {vote === 'yes' ? '찬성' : vote === 'no' ? '반대' : vote === 'abstain' ? '기권' : '대기'}
+                    {vote ? VOTE_LABEL[vote] : '—'}
                   </span>
                   {room.status === 'lobby' && (
                     <button
@@ -204,7 +204,7 @@ export function Host() {
                       disabled={busy}
                       onClick={() => void run(() => removeVoter(seed, hostKey, id))}
                     >
-                      제거
+                      Remove
                     </button>
                   )}
                 </li>
@@ -214,8 +214,8 @@ export function Host() {
         </div>
       </aside>
 
-      <section className="host-preview" aria-label="미리보기">
-        <div className="host-preview-label">미리보기 (공유용 아님)</div>
+      <section className="host-preview" aria-label="Preview">
+        <div className="host-preview-label">Preview (not for sharing)</div>
         <BoardShell room={room} seed={seed} showSeed />
       </section>
     </div>

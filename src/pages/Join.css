@@ -3,26 +3,24 @@
   display: grid;
   place-items: center;
   padding: 2rem 1.25rem;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(34, 80, 140, 0.28), transparent 55%),
-    #070b14;
+  background: #000;
   color: #fff;
 }
 
 .join-card {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   display: grid;
   gap: 0.75rem;
   padding: 1.75rem 1.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 12, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #000;
 }
 
 .join-seed-label {
   margin: 0;
   font-family: 'Outfit', sans-serif;
   letter-spacing: 0.12em;
-  color: #c9a227;
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
   font-size: 0.85rem;
 }
@@ -35,7 +33,7 @@
 
 .join-lead {
   margin: 0 0 0.5rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.55);
   line-height: 1.5;
   font-size: 0.95rem;
 }
@@ -49,21 +47,8 @@
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(240, 215, 140, 0.85);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
-}
-
-.join-card input {
-  font: inherit;
-  padding: 0.85rem 0.9rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-
-.join-card input:focus {
-  outline: 2px solid rgba(201, 162, 39, 0.5);
-  outline-offset: 1px;
 }
 
 .join-card .btn {
@@ -73,8 +58,8 @@
   font: inherit;
   font-weight: 600;
   padding: 0.85rem 1rem;
-  background: #c9a227;
-  color: #12100a;
+  background: #fff;
+  color: #000;
   margin-top: 0.35rem;
 }
 
@@ -83,14 +68,14 @@
 }
 
 .join-card a {
-  color: rgba(240, 215, 140, 0.9);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 0.88rem;
   margin-top: 0.25rem;
 }
 
 .join-message {
   margin: 0;
-  color: #fca5a5;
+  color: #f87171;
   font-size: 0.88rem;
 }
 
@@ -100,13 +85,13 @@
   place-content: center;
   gap: 0.75rem;
   text-align: center;
-  background: #070b14;
+  background: #000;
   color: #fff;
   padding: 2rem;
 }
 
 .join-status a {
-  color: #f0d78c;
+  color: #fff;
 }
 
 .join-board {
@@ -170,12 +155,6 @@
   font-size: 1.05rem;
   padding: 0.95rem 0.5rem;
   color: #0a0a0a;
-  transition: transform 0.12s ease, filter 0.12s ease;
-}
-
-.vote-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
 }
 
 .vote-btn:disabled {

@@ -15,9 +15,9 @@ export interface Room {
 }
 
 export const VOTE_LABEL: Record<VoteChoice, string> = {
-  yes: '찬성',
-  no: '반대',
-  abstain: '기권',
+  yes: 'Yes',
+  no: 'No',
+  abstain: 'Abstain',
 }
 
 export const VOTE_COLOR: Record<VoteChoice, string> = {
@@ -25,3 +25,5 @@ export const VOTE_COLOR: Record<VoteChoice, string> = {
   no: '#ef4444',
   abstain: '#eab308',
 }
+
+export const MAX_VOTER_ID_LENGTH = 64

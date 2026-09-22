@@ -25,7 +25,7 @@ let db: Database | null = null
 
 export function getDb(): Database {
   if (!isFirebaseConfigured()) {
-    throw new Error('Firebase 환경변수가 없습니다. README의 설정 단계를 확인하세요.')
+    throw new Error('Firebase env vars are missing. See README for setup.')
   }
   if (!app) {
     app = initializeApp(firebaseConfig)

@@ -15,9 +15,7 @@ interface Props {
 
 export function BoardShell({ room, seed, highlightId, showSeed, footer }: Props) {
   const title =
-    room.status === 'lobby'
-      ? '투표 대기 중'
-      : room.topic || '투표 진행 중'
+    room.status === 'lobby' ? 'Awaiting vote' : room.topic || 'Vote in progress'
 
   return (
     <div className="board-shell">
@@ -33,9 +31,9 @@ export function BoardShell({ room, seed, highlightId, showSeed, footer }: Props)
         </div>
         <StatsBar room={room} />
         <div className="board-status-line">
-          {room.status === 'lobby' && <span>호스트가 Topic을 입력하면 투표가 시작됩니다</span>}
-          {room.status === 'voting' && <span className="pulse">투표 진행 중</span>}
-          {room.status === 'results' && <span>투표 결과</span>}
+          {room.status === 'lobby' && <span>Host will set a topic to begin</span>}
+          {room.status === 'voting' && <span className="pulse">Voting in progress</span>}
+          {room.status === 'results' && <span>Results</span>}
         </div>
       </header>
 

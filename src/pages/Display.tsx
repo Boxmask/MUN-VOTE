@@ -12,14 +12,14 @@ export function Display() {
   if (!isFirebaseConfigured()) return <SetupGate />
 
   if (loading) {
-    return <div className="display-status">전광판 연결 중…</div>
+    return <div className="display-status">Connecting board…</div>
   }
 
   if (error || !room) {
     return (
       <div className="display-status">
-        <p>{error ?? '방을 찾을 수 없습니다.'}</p>
-        <Link to="/">홈으로</Link>
+        <p>{error ?? 'Room not found.'}</p>
+        <Link to="/">Home</Link>
       </div>
     )
   }
