@@ -1,0 +1,106 @@
+.board-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(40, 70, 120, 0.35), transparent 55%),
+    linear-gradient(180deg, #070b14 0%, #05070d 45%, #03050a 100%);
+  color: #fff;
+}
+
+.board-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.board-header-top {
+  width: min(1100px, 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.board-topic {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  max-width: 48rem;
+}
+
+.board-seed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  background: rgba(201, 162, 39, 0.08);
+  flex-shrink: 0;
+}
+
+.board-seed span {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: rgba(201, 162, 39, 0.9);
+  font-weight: 600;
+}
+
+.board-seed strong {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-status-line {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.04em;
+}
+
+.pulse {
+  color: #86efac;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.board-main {
+  flex: 1;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem 1.5rem;
+  min-height: 0;
+}
+
+.board-results-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.board-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1.25rem 1.1rem;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (min-width: 900px) {
+  .board-results-layout {
+    grid-template-columns: minmax(240px, 340px) 1fr;
+    align-items: start;
+  }
+}

@@ -1,0 +1,201 @@
+.home {
+  min-height: 100%;
+  position: relative;
+  color: #f5f1e8;
+  overflow: clip;
+}
+
+.home-atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, rgba(5, 12, 28, 0.55) 0%, rgba(5, 10, 18, 0.82) 42%, rgba(3, 6, 12, 0.92) 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 70% 55% at 75% 20%, #1a3a5c 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, #3a2a12 0%, transparent 50%),
+    #060a12;
+  animation: atmosphere-shift 14s ease-in-out infinite alternate;
+}
+
+.home-main {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 4.5rem);
+  max-width: 720px;
+}
+
+.home-brand {
+  margin: 0 0 1rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.4rem, 7vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: #f4e4b0;
+  text-shadow: 0 0 40px rgba(201, 162, 39, 0.25);
+  animation: brand-in 0.8s ease both;
+}
+
+.home-headline {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  animation: brand-in 0.8s ease 0.08s both;
+}
+
+.home-sub {
+  margin: 0 0 2rem;
+  max-width: 34rem;
+  line-height: 1.65;
+  color: rgba(245, 241, 232, 0.68);
+  animation: brand-in 0.8s ease 0.14s both;
+}
+
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 420px;
+  animation: brand-in 0.8s ease 0.2s both;
+}
+
+.btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.9rem 1.2rem;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn--primary {
+  background: #c9a227;
+  color: #12100a;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #dfb83a;
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: #f5f1e8;
+  border: 1px solid rgba(245, 241, 232, 0.35);
+}
+
+.btn--ghost:hover {
+  border-color: rgba(245, 241, 232, 0.7);
+}
+
+.home-join {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.home-join input {
+  font: inherit;
+  padding: 0.85rem 1rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  letter-spacing: 0.18em;
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+}
+
+.home-join input::placeholder {
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 500;
+}
+
+.home-join input:focus {
+  outline: 2px solid rgba(201, 162, 39, 0.55);
+  outline-offset: 1px;
+}
+
+.home-error {
+  margin: 1rem 0 0;
+  color: #fca5a5;
+  font-size: 0.92rem;
+}
+
+.home-tips {
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 36rem;
+  animation: brand-in 0.8s ease 0.28s both;
+}
+
+.home-tips h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(244, 228, 176, 0.9);
+}
+
+.home-tips p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.home-tips a {
+  color: #f0d78c;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@keyframes brand-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes atmosphere-shift {
+  from {
+    filter: hue-rotate(0deg);
+  }
+  to {
+    filter: hue-rotate(8deg);
+  }
+}
+
+@media (min-width: 720px) {
+  .home-actions {
+    max-width: 480px;
+  }
+}
