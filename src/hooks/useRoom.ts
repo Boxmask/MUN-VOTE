@@ -35,18 +35,20 @@ export function useRoom(seed: string | undefined) {
   useEffect(() => {
     if (!seed || room?.status !== 'voting' || typeof room.autoCloseAt !== 'number') return
 
-    let cancelled = false
+    const autoCloseAt = room.autoCloseAt
     let timeout: number | undefined
-    void getAutoCloseDelay(room.autoCloseAt).then((delay) => {
-      if (cancelled) return
-      timeout = window.setTimeout(() => {
-        void finishVoteIfReady(seed)
-      }, delay)
-    })
+    let cancelled = false
+
+    const attempt = () => {
+      finishVoteIfReady(seed).catch(() => {
+        if (!cancelled) timeout = window.setTimeout(attempt, 1_000)
+      })
+    }
+    timeout = window.setTimeout(attempt, getAutoCloseDelay(autoCloseAt) + 100)
 
     return () => {
       cancelled = true
-      if (timeout !== undefined) window.clearTimeout(timeout)
+      window.clearTimeout(timeout)
     }
   }, [room?.autoCloseAt, room?.status, seed])
 
