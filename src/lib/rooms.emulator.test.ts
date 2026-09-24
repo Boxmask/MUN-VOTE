@@ -1,4 +1,4 @@
-import { get, ref } from 'firebase/database'
+import { get, onValue, ref, set } from 'firebase/database'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { getDb } from './firebase'
 import { castVote, createRoom, endVote, finishVoteIfReady, joinRoom, resetToLobby, startVote } from './rooms'
@@ -55,8 +55,18 @@ describe('vote lifecycle against the database emulator', () => {
     await expect(finishVoteIfReady(seed)).rejects.toThrow('Too early')
     expect((await readRoom(seed)).status).toBe('voting')
 
+    const statuses: string[] = []
+    const unsubscribe = onValue(ref(getDb(), `rooms/${seed}`), (snap) => {
+      const status = (snap.val() as Room).status
+      if (statuses.at(-1) !== status) statuses.push(status)
+    })
+
     await sleep(3_200)
-    await finishVoteIfReady(seed)
+    await Promise.all(Array.from({ length: 5 }, () => finishVoteIfReady(seed)))
+    await sleep(300)
+    unsubscribe()
+    expect(statuses).toEqual(['voting', 'results'])
+
     room = await readRoom(seed)
     expect(room.status).toBe('results')
     expect(room.closeReason).toBe('all-voted')
@@ -74,5 +84,11 @@ describe('vote lifecycle against the database emulator', () => {
     await startVote(seed, hostKey, 'Resolution C')
     await castVote(seed, 'Korea', 'yes')
     await expect(castVote(seed, 'Korea', 'no')).rejects.toThrow('already voted')
+    await expect(set(ref(getDb(), `rooms/${seed}/voters/Korea/vote`), 'no')).rejects.toThrow(
+      /permission denied/i,
+    )
+    await expect(set(ref(getDb(), `rooms/${seed}/status`), 'lobby')).rejects.toThrow(
+      /permission denied/i,
+    )
   })
 })

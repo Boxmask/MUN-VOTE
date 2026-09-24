@@ -90,23 +90,31 @@ export function subscribeRoom(
 
 class RoomUpdateRejected extends Error {}
 
+export class AutoCloseTooEarly extends RoomUpdateRejected {}
+
 async function updateRoom(seed: string, mutate: (room: Room) => Room): Promise<Room> {
   let rejection = null as RoomUpdateRejected | null
   // The first attempt runs against the local cache, which is null when this client has not
   // loaded the room yet. Returning null lets the server reply with the real value and retry.
-  const result = await runTransaction(roomRef(seed), (current: Room | null) => {
-    rejection = null
-    if (current === null) return null
-    try {
-      return mutate(current)
-    } catch (e) {
-      if (e instanceof RoomUpdateRejected) {
-        rejection = e
-        return
+  // applyLocally: false keeps listeners on confirmed server state, so a rejected write never
+  // flashes an unconfirmed status (results -> voting -> results) on screen.
+  const result = await runTransaction(
+    roomRef(seed),
+    (current: Room | null) => {
+      rejection = null
+      if (current === null) return null
+      try {
+        return mutate(current)
+      } catch (e) {
+        if (e instanceof RoomUpdateRejected) {
+          rejection = e
+          return
+        }
+        throw e
       }
-      throw e
-    }
-  })
+    },
+    { applyLocally: false },
+  )
 
   if (rejection) throw rejection
   if (!result.committed) throw new Error('Request failed. Please try again.')
@@ -197,7 +205,7 @@ export async function finishVoteIfReady(seed: string): Promise<void> {
   try {
     await updateRoom(seed, (room) => {
       if (room.status !== 'voting' || typeof room.autoCloseAt !== 'number') reject('Not pending.')
-      if (room.autoCloseAt > getServerNow()) reject('Too early.')
+      if (room.autoCloseAt > getServerNow()) throw new AutoCloseTooEarly('Too early.')
 
       const voters = Object.values(room.voters ?? {})
       const allVoted = voters.length > 0 && voters.every((voter) => voter.vote != null)
@@ -210,7 +218,7 @@ export async function finishVoteIfReady(seed: string): Promise<void> {
       }
     })
   } catch (e) {
-    if (!(e instanceof RoomUpdateRejected) || e.message === 'Too early.') throw e
+    if (!(e instanceof RoomUpdateRejected) || e instanceof AutoCloseTooEarly) throw e
   }
 }
 

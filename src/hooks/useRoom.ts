@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Room } from '../types'
-import { finishVoteIfReady, getAutoCloseDelay, subscribeRoom } from '../lib/rooms'
+import { AutoCloseTooEarly, finishVoteIfReady, getAutoCloseDelay, subscribeRoom } from '../lib/rooms'
 
 export function useRoom(seed: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null)
@@ -40,8 +40,10 @@ export function useRoom(seed: string | undefined) {
     let cancelled = false
 
     const attempt = () => {
-      finishVoteIfReady(seed).catch(() => {
-        if (!cancelled) timeout = window.setTimeout(attempt, 1_000)
+      finishVoteIfReady(seed).catch((e) => {
+        if (cancelled) return
+        if (e instanceof AutoCloseTooEarly) timeout = window.setTimeout(attempt, 500)
+        else console.error('Auto-close failed', e)
       })
     }
     timeout = window.setTimeout(attempt, getAutoCloseDelay(autoCloseAt) + 100)

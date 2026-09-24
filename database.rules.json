@@ -5,29 +5,35 @@
     "rooms": {
       "$seed": {
         ".read": true,
-        ".write": "!newData.exists() && !data.exists() || (!data.exists() && newData.exists()) || (data.exists() && newData.exists() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('hostKey').val() === data.child('hostKey').val() && ((data.child('status').val() === 'lobby' && newData.child('status').val() === 'lobby' && newData.child('topic').val() === data.child('topic').val() && newData.child('autoCloseAt').val() === data.child('autoCloseAt').val() && newData.child('closeReason').val() === data.child('closeReason').val()) || (data.child('status').val() === 'lobby' && newData.child('status').val() === 'voting' && newData.child('voters').val() === data.child('voters').val() && !newData.child('autoCloseAt').exists() && !newData.child('closeReason').exists()) || (data.child('status').val() === 'voting' && newData.child('status').val() === 'voting' && newData.child('topic').val() === data.child('topic').val() && !newData.child('closeReason').exists() && ((!data.child('autoCloseAt').exists() && (!newData.child('autoCloseAt').exists() || (newData.child('autoCloseAt').isNumber() && newData.child('autoCloseAt').val() <= now + 60000))) || newData.child('autoCloseAt').val() === data.child('autoCloseAt').val() || !newData.child('autoCloseAt').exists())) || (data.child('status').val() === 'voting' && newData.child('status').val() === 'results' && newData.child('topic').val() === data.child('topic').val() && newData.child('voters').val() === data.child('voters').val() && ((newData.child('closeReason').val() === 'host' && !newData.child('autoCloseAt').exists()) || (newData.child('closeReason').val() === 'all-voted' && newData.child('autoCloseAt').val() === data.child('autoCloseAt').val() && data.child('autoCloseAt').isNumber() && data.child('autoCloseAt').val() <= now))) || (data.child('status').val() === 'results' && newData.child('status').val() === 'lobby' && newData.child('topic').val() === '' && !newData.child('autoCloseAt').exists() && !newData.child('closeReason').exists())))",
+        ".write": "!data.exists() || (newData.exists() && newData.child('hostKey').val() === data.child('hostKey').val() && newData.child('createdAt').val() === data.child('createdAt').val())",
         ".validate": "newData.hasChildren(['createdAt', 'hostKey', 'topic', 'status'])",
         "createdAt": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
+          ".validate": "newData.isNumber()"
         },
         "hostKey": {
-          ".validate": "newData.isString() && newData.val().length >= 32 && newData.val().length <= 64"
+          ".validate": "newData.isString() && newData.val().length >= 16 && newData.val().length <= 64"
         },
         "topic": {
-          ".validate": "newData.isString() && newData.val().length <= 120 && (newData.parent().child('status').val() === 'lobby' || newData.val().length > 0)"
+          ".validate": "newData.isString() && newData.val().length <= 120"
         },
         "status": {
-          ".validate": "newData.val() === 'lobby' || newData.val() === 'voting' || newData.val() === 'results'"
+          ".validate": "(newData.val() === 'lobby' || newData.val() === 'voting' || newData.val() === 'results') && (!data.exists() || newData.val() === data.val() || (data.val() === 'lobby' && newData.val() === 'voting') || (data.val() === 'voting' && newData.val() === 'results') || (data.val() === 'results' && newData.val() === 'lobby'))"
         },
         "autoCloseAt": {
-          ".validate": "newData.isNumber() && newData.val() > 0"
+          ".validate": "newData.isNumber()"
         },
         "closeReason": {
           ".validate": "newData.val() === 'all-voted' || newData.val() === 'host'"
         },
         "voters": {
           "$voterId": {
-            ".validate": "newData.hasChildren(['joinedAt']) && $voterId.length > 0 && $voterId.length <= 64 && newData.child('joinedAt').isNumber() && newData.child('joinedAt').val() > 0 && (!data.exists() || newData.child('joinedAt').val() === data.child('joinedAt').val()) && ((newData.parent().parent().child('status').val() === 'lobby' && newData.child('vote').val() === null) || (data.exists() && data.parent().parent().child('status').val() === 'voting' && newData.parent().parent().child('status').val() === 'voting' && data.child('vote').val() === null && (newData.child('vote').val() === 'yes' || newData.child('vote').val() === 'no' || newData.child('vote').val() === 'abstain')) || (data.exists() && newData.child('vote').val() === data.child('vote').val()) || (data.exists() && data.parent().parent().child('status').val() === 'results' && newData.parent().parent().child('status').val() === 'lobby' && newData.child('vote').val() === null))",
+            ".validate": "newData.hasChildren(['joinedAt']) && $voterId.length <= 64",
+            "joinedAt": {
+              ".validate": "newData.isNumber()"
+            },
+            "vote": {
+              ".validate": "(newData.val() === 'yes' || newData.val() === 'no' || newData.val() === 'abstain') && ((data.exists() && newData.val() === data.val()) || (!data.exists() && newData.parent().parent().parent().child('status').val() === 'voting'))"
+            },
             "$other": {
               ".validate": false
             }

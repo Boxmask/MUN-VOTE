@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:emulator": "VITE_FIREBASE_API_KEY=demo VITE_FIREBASE_PROJECT_ID=demo-mun-vote VITE_FIREBASE_APP_ID=demo VITE_FIREBASE_DATABASE_URL='http://127.0.0.1:9000?ns=demo-mun-vote' npx --yes firebase-tools emulators:exec --only database --project demo-mun-vote 'vitest run'"
+    "test:emulator": "VITE_FIREBASE_API_KEY=demo VITE_FIREBASE_PROJECT_ID=demo-mun-vote VITE_FIREBASE_APP_ID=demo VITE_FIREBASE_DATABASE_URL='http://127.0.0.1:9000?ns=demo-mun-vote-default-rtdb' npx --yes firebase-tools emulators:exec --only database --project demo-mun-vote 'vitest run'"
   },
   "allowScripts": {
     "@firebase/util@1.12.1": true,
