@@ -30,7 +30,7 @@ export function VoterGrid({ room, highlightId, revealVotes = true }: Props) {
     <div className="voter-grid" role="list">
       {ids.map((id) => {
         const vote = room.voters[id]?.vote as VoteChoice | null
-        const active = showDots && vote !== null
+        const active = showDots && vote != null
         const color = vote ? VOTE_COLOR[vote] : undefined
 
         return (

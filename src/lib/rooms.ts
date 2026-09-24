@@ -1,4 +1,5 @@
 import {
+  get,
   onValue,
   ref,
   remove,
@@ -13,6 +14,16 @@ const AUTO_CLOSE_DELAY_MS = 3_000
 
 function roomRef(seed: string) {
   return ref(getDb(), `rooms/${seed}`)
+}
+
+async function getServerNow(): Promise<number> {
+  const snapshot = await get(ref(getDb(), '.info/serverTimeOffset'))
+  const offset = snapshot.val()
+  return Date.now() + (typeof offset === 'number' ? offset : 0)
+}
+
+export async function getAutoCloseDelay(autoCloseAt: number): Promise<number> {
+  return Math.max(0, autoCloseAt - (await getServerNow()))
 }
 
 export function generateSeed(): string {
@@ -131,6 +142,7 @@ export async function castVote(
   voterId: string,
   choice: VoteChoice,
 ): Promise<void> {
+  const autoCloseAt = (await getServerNow()) + AUTO_CLOSE_DELAY_MS
   let rejection: 'missing' | 'not-voting' | 'not-enrolled' | 'already-voted' | null = null
   const result = await runTransaction(roomRef(seed), (room: Room | null) => {
     if (room === null) {
@@ -161,7 +173,7 @@ export async function castVote(
     return {
       ...room,
       voters,
-      autoCloseAt: allVoted ? Date.now() + AUTO_CLOSE_DELAY_MS : null,
+      autoCloseAt: allVoted ? autoCloseAt : null,
       closeReason: null,
     }
   })
@@ -175,12 +187,13 @@ export async function castVote(
 }
 
 export async function finishVoteIfReady(seed: string): Promise<void> {
+  const serverNow = await getServerNow()
   await runTransaction(roomRef(seed), (room: Room | null) => {
     if (
       room === null ||
       room.status !== 'voting' ||
       typeof room.autoCloseAt !== 'number' ||
-      room.autoCloseAt > Date.now()
+      room.autoCloseAt > serverNow
     ) {
       return
     }

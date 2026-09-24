@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Room } from '../types'
-import { finishVoteIfReady, subscribeRoom } from '../lib/rooms'
+import { finishVoteIfReady, getAutoCloseDelay, subscribeRoom } from '../lib/rooms'
 
 export function useRoom(seed: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null)
@@ -35,12 +35,19 @@ export function useRoom(seed: string | undefined) {
   useEffect(() => {
     if (!seed || room?.status !== 'voting' || typeof room.autoCloseAt !== 'number') return
 
-    const delay = Math.max(0, room.autoCloseAt - Date.now())
-    const timeout = window.setTimeout(() => {
-      void finishVoteIfReady(seed)
-    }, delay)
+    let cancelled = false
+    let timeout: number | undefined
+    void getAutoCloseDelay(room.autoCloseAt).then((delay) => {
+      if (cancelled) return
+      timeout = window.setTimeout(() => {
+        void finishVoteIfReady(seed)
+      }, delay)
+    })
 
-    return () => window.clearTimeout(timeout)
+    return () => {
+      cancelled = true
+      if (timeout !== undefined) window.clearTimeout(timeout)
+    }
   }, [room?.autoCloseAt, room?.status, seed])
 
   return { room, loading, error }
