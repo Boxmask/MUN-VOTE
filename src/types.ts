@@ -1,8 +1,9 @@
 export type VoteChoice = 'yes' | 'no' | 'abstain'
 export type RoomStatus = 'lobby' | 'voting' | 'results'
+export type CloseReason = 'all-voted' | 'host'
 
 export interface Voter {
-  vote: VoteChoice | null
+  vote?: VoteChoice | null
   joinedAt: number
 }
 
@@ -12,6 +13,8 @@ export interface Room {
   topic: string
   status: RoomStatus
   voters: Record<string, Voter>
+  autoCloseAt?: number | null
+  closeReason?: CloseReason | null
 }
 
 export const VOTE_LABEL: Record<VoteChoice, string> = {

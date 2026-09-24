@@ -1,16 +1,15 @@
 import {
-  get,
   onValue,
   ref,
   remove,
   runTransaction,
-  set,
-  update,
   type Unsubscribe,
 } from 'firebase/database'
 import { getDb } from './firebase'
 import type { Room, RoomStatus, VoteChoice, Voter } from '../types'
 import { MAX_VOTER_ID_LENGTH } from '../types'
+
+const AUTO_CLOSE_DELAY_MS = 3_000
 
 function roomRef(seed: string) {
   return ref(getDb(), `rooms/${seed}`)
@@ -36,9 +35,6 @@ export async function createRoom(): Promise<{ seed: string; hostKey: string }> {
   const db = getDb()
   for (let i = 0; i < 8; i++) {
     const seed = generateSeed()
-    const snap = await get(ref(db, `rooms/${seed}`))
-    if (snap.exists()) continue
-
     const hostKey = generateHostKey()
     const room: Room = {
       createdAt: Date.now(),
@@ -47,7 +43,12 @@ export async function createRoom(): Promise<{ seed: string; hostKey: string }> {
       status: 'lobby',
       voters: {},
     }
-    await set(ref(db, `rooms/${seed}`), room)
+    const result = await runTransaction(ref(db, `rooms/${seed}`), (current) => {
+      if (current !== null) return
+      return room
+    })
+    if (!result.committed) continue
+
     localStorage.setItem(hostKeyStorageKey(seed), hostKey)
     return { seed, hostKey }
   }
@@ -70,16 +71,31 @@ export async function joinRoom(seed: string, voterId: string): Promise<void> {
     throw new Error(`ID must be ${MAX_VOTER_ID_LENGTH} characters or fewer.`)
   }
 
-  const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('That seed number does not exist.')
+  let rejection: 'missing' | 'closed' | 'duplicate' | null = null
+  const result = await runTransaction(roomRef(seed), (current: Room | null) => {
+    if (current === null) {
+      rejection = 'missing'
+      return
+    }
+    if (current.status !== 'lobby') {
+      rejection = 'closed'
+      return
+    }
+    if (current.voters?.[id]) {
+      rejection = 'duplicate'
+      return
+    }
 
-  const result = await runTransaction(ref(getDb(), `rooms/${seed}/voters/${id}`), (current) => {
-    if (current !== null) return undefined
     const voter: Voter = { vote: null, joinedAt: Date.now() }
-    return voter
+    return {
+      ...current,
+      voters: { ...(current.voters ?? {}), [id]: voter },
+    }
   })
 
   if (!result.committed) {
+    if (rejection === 'missing') throw new Error('That seed number does not exist.')
+    if (rejection === 'closed') throw new Error('Join before the host starts the vote.')
     throw new Error('That ID is already taken. Choose another.')
   }
 
@@ -90,21 +106,24 @@ export async function startVote(seed: string, hostKey: string, topic: string): P
   const trimmed = topic.trim()
   if (!trimmed) throw new Error('Enter a topic.')
 
-  const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('Room not found.')
-  const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
+  const result = await runTransaction(roomRef(seed), (room: Room | null) => {
+    if (room === null || room.hostKey !== hostKey || room.status !== 'lobby') return
 
-  const clearedVoters: Record<string, Voter> = {}
-  for (const [id, voter] of Object.entries(room.voters ?? {})) {
-    clearedVoters[id] = { vote: null, joinedAt: voter.joinedAt }
-  }
+    const clearedVoters: Record<string, Voter> = {}
+    for (const [id, voter] of Object.entries(room.voters ?? {})) {
+      clearedVoters[id] = { vote: null, joinedAt: voter.joinedAt }
+    }
 
-  await update(roomRef(seed), {
-    topic: trimmed,
-    status: 'voting' satisfies RoomStatus,
-    voters: clearedVoters,
+    return {
+      ...room,
+      topic: trimmed,
+      status: 'voting' satisfies RoomStatus,
+      voters: clearedVoters,
+      autoCloseAt: null,
+      closeReason: null,
+    }
   })
+  if (!result.committed) throw new Error('Could not start vote. Check host permission and state.')
 }
 
 export async function castVote(
@@ -112,56 +131,104 @@ export async function castVote(
   voterId: string,
   choice: VoteChoice,
 ): Promise<void> {
-  const votePath = ref(getDb(), `rooms/${seed}/voters/${voterId}/vote`)
-  const result = await runTransaction(votePath, (current) => {
-    if (current !== null) return
-    return choice
+  let rejection: 'missing' | 'not-voting' | 'not-enrolled' | 'already-voted' | null = null
+  const result = await runTransaction(roomRef(seed), (room: Room | null) => {
+    if (room === null) {
+      rejection = 'missing'
+      return
+    }
+    if (room.status !== 'voting') {
+      rejection = 'not-voting'
+      return
+    }
+    const voter = room.voters?.[voterId]
+    if (!voter) {
+      rejection = 'not-enrolled'
+      return
+    }
+    if (voter.vote != null) {
+      rejection = 'already-voted'
+      return
+    }
+
+    const voters = {
+      ...room.voters,
+      [voterId]: { ...voter, vote: choice },
+    }
+    const allVoted =
+      Object.keys(voters).length > 0 && Object.values(voters).every((entry) => entry.vote != null)
+
+    return {
+      ...room,
+      voters,
+      autoCloseAt: allVoted ? Date.now() + AUTO_CLOSE_DELAY_MS : null,
+      closeReason: null,
+    }
   })
 
   if (!result.committed) {
+    if (rejection === 'missing') throw new Error('Room not found.')
+    if (rejection === 'not-voting') throw new Error('Voting is not open.')
+    if (rejection === 'not-enrolled') throw new Error('You are not enrolled in this room.')
     throw new Error('You already voted. Votes cannot be changed.')
   }
-
-  await maybeFinishWhenAllVoted(seed)
 }
 
-async function maybeFinishWhenAllVoted(seed: string): Promise<void> {
-  const snap = await get(roomRef(seed))
-  if (!snap.exists()) return
-  const room = snap.val() as Room
-  if (room.status !== 'voting') return
+export async function finishVoteIfReady(seed: string): Promise<void> {
+  await runTransaction(roomRef(seed), (room: Room | null) => {
+    if (
+      room === null ||
+      room.status !== 'voting' ||
+      typeof room.autoCloseAt !== 'number' ||
+      room.autoCloseAt > Date.now()
+    ) {
+      return
+    }
 
-  const voters = Object.values(room.voters ?? {})
-  if (voters.length === 0) return
-  if (voters.every((v) => v.vote !== null)) {
-    await update(roomRef(seed), { status: 'results' satisfies RoomStatus })
-  }
+    const voters = Object.values(room.voters ?? {})
+    const allVoted = voters.length > 0 && voters.every((voter) => voter.vote != null)
+    if (!allVoted) return { ...room, autoCloseAt: null }
+
+    return {
+      ...room,
+      status: 'results' satisfies RoomStatus,
+      closeReason: 'all-voted' as const,
+    }
+  })
 }
 
 export async function endVote(seed: string, hostKey: string): Promise<void> {
-  const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('Room not found.')
-  const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
-  await update(roomRef(seed), { status: 'results' satisfies RoomStatus })
+  const result = await runTransaction(roomRef(seed), (room: Room | null) => {
+    if (room === null || room.hostKey !== hostKey || room.status !== 'voting') return
+    return {
+      ...room,
+      status: 'results' satisfies RoomStatus,
+      autoCloseAt: null,
+      closeReason: 'host' as const,
+    }
+  })
+  if (!result.committed) throw new Error('Could not end vote. Check host permission and state.')
 }
 
 export async function resetToLobby(seed: string, hostKey: string): Promise<void> {
-  const snap = await get(roomRef(seed))
-  if (!snap.exists()) throw new Error('Room not found.')
-  const room = snap.val() as Room
-  if (room.hostKey !== hostKey) throw new Error('Host permission required.')
+  const result = await runTransaction(roomRef(seed), (room: Room | null) => {
+    if (room === null || room.hostKey !== hostKey || room.status !== 'results') return
 
-  const clearedVoters: Record<string, Voter> = {}
-  for (const [id, voter] of Object.entries(room.voters ?? {})) {
-    clearedVoters[id] = { vote: null, joinedAt: voter.joinedAt }
-  }
+    const clearedVoters: Record<string, Voter> = {}
+    for (const [id, voter] of Object.entries(room.voters ?? {})) {
+      clearedVoters[id] = { vote: null, joinedAt: voter.joinedAt }
+    }
 
-  await update(roomRef(seed), {
-    topic: '',
-    status: 'lobby' satisfies RoomStatus,
-    voters: clearedVoters,
+    return {
+      ...room,
+      topic: '',
+      status: 'lobby' satisfies RoomStatus,
+      voters: clearedVoters,
+      autoCloseAt: null,
+      closeReason: null,
+    }
   })
+  if (!result.committed) throw new Error('Could not reset vote. Check host permission and state.')
 }
 
 export async function removeVoter(seed: string, hostKey: string, voterId: string): Promise<void> {
